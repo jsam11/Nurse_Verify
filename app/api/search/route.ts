@@ -1,8 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getCurrentAccount, getUsage } from "@/lib/account";
 import { hashApiKey } from "@/lib/api-keys";
+import { searchPreviewRecords } from "@/lib/preview-data";
 import { prisma } from "@/lib/prisma";
+import { hasClerkConfig, hasDatabaseConfig, previewEmailCookie } from "@/lib/runtime";
 import { searchRecords } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
@@ -58,12 +61,6 @@ async function resolveAccount(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const account = await resolveAccount(request);
-
-  if (!account) {
-    return NextResponse.json({ error: "Authentication or API key required." }, { status: 401 });
-  }
-
   const body = (await request.json().catch(() => ({}))) as SearchRequest;
   const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";
   const state = typeof body.state === "string" && body.state.length > 0 ? body.state : undefined;
@@ -72,6 +69,27 @@ export async function POST(request: Request) {
 
   if (fullName.length < 2) {
     return NextResponse.json({ error: "Enter at least two characters of a nurse name." }, { status: 400 });
+  }
+
+  if (!hasClerkConfig() || !hasDatabaseConfig()) {
+    const cookieStore = await cookies();
+    const email = cookieStore.get(previewEmailCookie)?.value;
+    const hasTestKey = request.headers.get("authorization")?.startsWith("Bearer nv_test_");
+
+    if (!email && !hasTestKey) {
+      return NextResponse.json({ error: "Preview login or test API key required." }, { status: 401 });
+    }
+
+    return NextResponse.json({
+      results: searchPreviewRecords({ fullName, state, hospitalSystem }),
+      usage: { usedThisMonth: 1, monthlySearchLimit: 3, paidSearchCredits: 0 }
+    });
+  }
+
+  const account = await resolveAccount(request);
+
+  if (!account) {
+    return NextResponse.json({ error: "Authentication or API key required." }, { status: 401 });
   }
 
   const usage = await getUsage(account.id);

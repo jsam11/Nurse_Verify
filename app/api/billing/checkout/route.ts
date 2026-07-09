@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { getCurrentAccount } from "@/lib/account";
+import { hasClerkConfig, hasDatabaseConfig } from "@/lib/runtime";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  if (!hasClerkConfig() || !hasDatabaseConfig()) {
+    return NextResponse.json(
+      {
+        error: "Stripe checkout is disabled in preview mode. Add Clerk, database, and Stripe env vars to test real billing."
+      },
+      { status: 501 }
+    );
+  }
+
   const account = await getCurrentAccount();
 
   if (!account) {
