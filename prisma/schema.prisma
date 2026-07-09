@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LicenseType {
+  RN
+  LPN
+  APRN
+  CNA
+  CRNA
+  LVN
+  OTHER
+}
+
+enum SanctionType {
+  REVOCATION
+  SUSPENSION
+  VOLUNTARY_SURRENDER
+  REPRIMAND
+  PROBATION
+  CONSENT_ORDER
+  FINE
+  DENIAL
+  OTHER
+}
+
+enum SourceType {
+  WEBPAGE
+  PDF
+  DATABASE
+}
+
+model NurseRecord {
+  recordId           String       @id
+  fullName           String
+  state              String
+  licenseType        LicenseType
+  licenseNumber      String?
+  sanctionType       SanctionType
+  effectiveDate      String?
+  employerOrFacility String?
+  hospitalSystem     String?
+  reason             String
+  sourceUrl          String
+  sourceType         SourceType
+  sourceTitle        String
+  lastRefreshed      String
+  isDemo             Boolean      @default(false)
+
+  @@index([fullName])
+  @@index([state])
+  @@index([licenseNumber])
+  @@index([hospitalSystem])
+}
+
+model UserAccount {
+  id                 String        @id @default(cuid())
+  clerkUserId        String        @unique
+  email              String
+  stripeCustomerId   String?
+  monthlySearchLimit Int           @default(3)
+  paidSearchCredits  Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  apiKeys            ApiKey[]
+  searches           SearchEvent[]
+}
+
+model ApiKey {
+  id         String      @id @default(cuid())
+  keyHash    String      @unique
+  prefix     String
+  label      String      @default("Default key")
+  createdAt  DateTime    @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  accountId  String
+  account    UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+model SearchEvent {
+  id             String      @id @default(cuid())
+  query          String
+  state          String?
+  hospitalSystem String?
+  resultCount    Int
+  chargedCredit  Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  accountId      String
+  account        UserAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+}
