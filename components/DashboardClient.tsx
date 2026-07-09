@@ -37,7 +37,7 @@ export function DashboardClient({ initialEmail }: DashboardClientProps) {
     apiKeys: [],
     history: []
   });
-  const [fullName, setFullName] = useState("Jordan");
+  const [fullName, setFullName] = useState("Harris");
   const [state, setState] = useState("");
   const [hospitalSystem, setHospitalSystem] = useState("");
   const [results, setResults] = useState<NurseRecord[]>([]);

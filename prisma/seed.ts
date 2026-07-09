@@ -1,10 +1,10 @@
 import { PrismaClient } from "@prisma/client";
-import { seedRecords } from "../data/seed-records";
+import { allSeedRecords } from "../data/seed-records";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  for (const record of seedRecords) {
+  for (const record of allSeedRecords) {
     await prisma.nurseRecord.upsert({
       where: { recordId: record.recordId },
       update: record,
@@ -12,7 +12,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded ${seedRecords.length} sandbox nurse records.`);
+  console.log(`Seeded ${allSeedRecords.length} nurse records.`);
 }
 
 main()

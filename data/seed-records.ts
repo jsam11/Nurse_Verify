@@ -1,4 +1,5 @@
 import type { NurseRecord } from "@/lib/types";
+import { realTestRecords } from "@/data/real-test-records";
 
 export const seedRecords: NurseRecord[] = [
   {
@@ -104,3 +105,5 @@ export const seedRecords: NurseRecord[] = [
     isDemo: true
   }
 ];
+
+export const allSeedRecords: NurseRecord[] = [...realTestRecords, ...seedRecords];
